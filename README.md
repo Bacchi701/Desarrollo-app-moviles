@@ -7,6 +7,7 @@ Para el correcto funcionamiento de las interfaces de Login, Register y Menu prin
 build.grace.kts (:app), el cual debe de contener las siguientes dependencias dentro de "dependencies {}"
 
 dependencies {
+
     // Compose Foundation (HorizontalPager para el carrusel)
     implementation("androidx.compose.foundation:foundation")
     // Navegación en Compose

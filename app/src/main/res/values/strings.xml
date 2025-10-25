@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">ConfeccionesBrenda</string>
+    <string name="welcome_title">Confecciones Brenda</string>
+    <string name="welcome_sub">Uniformes escolares de calidad</string>
+    <string name="action_login">Iniciar sesión</string>
+    <string name="action_register">Crear cuenta</string>
+    <string name="home_title">Menú principal</string>
 </resources>

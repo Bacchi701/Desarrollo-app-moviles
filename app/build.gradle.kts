@@ -42,6 +42,15 @@ android {
 }
 
 dependencies {
+    // Compose Foundation (HorizontalPager para el carrusel)
+    implementation("androidx.compose.foundation:foundation")
+    // Navegación en Compose
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+    // Iconos Material (email, lock, person, etc.)
+    implementation("androidx.compose.material:material-icons-extended")
+    // DataStore (persistencia local de preferencias)
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

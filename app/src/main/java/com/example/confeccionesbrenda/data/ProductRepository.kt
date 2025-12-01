@@ -1,57 +1,69 @@
 package com.example.confeccionesbrenda.data
 
-import com.example.confeccionesbrenda.data.models.CartItem
+import android.util.Log
 import com.example.confeccionesbrenda.data.models.CartItemWithProduct
 import com.example.confeccionesbrenda.data.models.Product
+import com.example.confeccionesbrenda.data.network.RetrofitClient
+import com.example.confeccionesbrenda.data.network.mappers.toDomainModel
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Repositorio para gestionar los datos de Productos y el Carrito de Compras.
- * Abstrae la fuente de datos (en este caso, Room) del resto de la aplicación (ViewModels).
+ * Repositorio actualizado para gestionar productos desde una fuente local (Room)
+ * y una remota (API).
  */
 class ProductRepository(private val productDao: ProductDao) {
 
     /**
-     * Expone un Flow con la lista de todos los productos.
+     * Expone un Flow con la lista de productos DESDE LA BASE DE DATOS LOCAL.
+     * La UI siempre observará esta fuente de verdad única.
      */
     val allProducts: Flow<List<Product>> = productDao.getAllProducts()
 
     /**
-     * Expone un Flow con la lista de items del carrito enriquecidos con la info del producto.
-     * Esta es la fuente de datos principal para la pantalla del carrito.
+     * Sincroniza el catálogo de productos.
+     * 1. Llama a la API para obtener los productos más recientes.
+     * 2. Mapea los DTOs de la red a las entidades de la base de datos.
+     * 3. Inserta los nuevos productos en la base de datos local (Room).
+     * La UI se actualizará automáticamente gracias al Flow de `allProducts`.
      */
+    suspend fun refreshProducts() {
+        try {
+            // 1. Obtener datos de la red
+            val apiResponse = RetrofitClient.instance.getProducts()
+            val networkProducts = apiResponse.products
+
+            // 2. Mapear a modelo de dominio/base de datos
+            val domainProducts = networkProducts.toDomainModel()
+
+            // 3. Insertar en la base de datos local
+            productDao.insertProducts(domainProducts)
+            Log.d("ProductRepository", "Productos sincronizados exitosamente desde la API.")
+        } catch (e: Exception) {
+            // En una app real, aquí manejaríamos los errores de red de forma más elegante
+            // (ej. mostrando un Toast o un Snackbar, o logueando a un servicio de errores).
+            Log.e("ProductRepository", "Error al sincronizar productos: ${e.message}")
+        }
+    }
+    
+    // --- El resto de las funciones (carrito, etc.) se mantienen igual ---
+    
     val cartItemsWithProducts: Flow<List<CartItemWithProduct>> = productDao.getCartItemsWithProducts()
 
-    /**
-     * Obtiene un producto específico por su ID.
-     */
     fun getProductById(productId: Int): Flow<Product?> {
         return productDao.getProductById(productId)
     }
 
-    /**
-     * Lógica para añadir un producto al carrito.
-     * Si el producto ya está en el carrito, incrementa la cantidad.
-     * Si no está, lo inserta como un nuevo item.
-     */
     suspend fun addProductToCart(productId: Int) {
         val existingItem = productDao.getCartItemByProductId(productId)
-
         if (existingItem != null) {
-            // Si el item ya existe, incrementamos la cantidad
             val updatedItem = existingItem.copy(quantity = existingItem.quantity + 1)
             productDao.updateCartItem(updatedItem)
         } else {
-            // Si no existe, creamos un nuevo item con cantidad 1
-            val newItem = CartItem(productId = productId, quantity = 1)
+            val newItem = com.example.confeccionesbrenda.data.models.CartItem(productId = productId, quantity = 1)
             productDao.insertCartItem(newItem)
         }
     }
 
-    /**
-     * Actualiza la cantidad de un item en el carrito.
-     * Si la nueva cantidad es 0 o menos, elimina el item.
-     */
     suspend fun updateCartItemQuantity(productId: Int, newQuantity: Int) {
         val existingItem = productDao.getCartItemByProductId(productId)
         if (existingItem != null) {
@@ -59,15 +71,11 @@ class ProductRepository(private val productDao: ProductDao) {
                 val updatedItem = existingItem.copy(quantity = newQuantity)
                 productDao.updateCartItem(updatedItem)
             } else {
-                // Si la cantidad es 0 o menos, eliminamos el item del carrito
                 productDao.deleteCartItemById(existingItem.id)
             }
         }
     }
 
-    /**
-     * Elimina completamente un producto (y todas sus cantidades) del carrito.
-     */
     suspend fun removeProductFromCart(productId: Int) {
         val existingItem = productDao.getCartItemByProductId(productId)
         if (existingItem != null) {
@@ -75,9 +83,6 @@ class ProductRepository(private val productDao: ProductDao) {
         }
     }
 
-    /**
-     * Vacía completamente el carrito de compras.
-     */
     suspend fun clearCart() {
         productDao.clearCart()
     }

@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("kotlin-kapt") // o id("com.google.devtools.ksp"
 }
 
 android {
@@ -42,6 +43,9 @@ android {
 }
 
 dependencies {
+    // Definiciones de versiones
+    val room_version = "2.6.1"
+
     // Compose Foundation (HorizontalPager para el carrusel)
     implementation("androidx.compose.foundation:foundation")
     // Navegación en Compose
@@ -50,6 +54,14 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     // DataStore (persistencia local de preferencias)
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+
+    // Room (Base de datos)
+    implementation("androidx.room:room-runtime:$room_version")
+    kapt("androidx.room:room-compiler:$room_version") // O ksp si usas KSP en lugar de Kapt
+    // Soporte para Coroutines y Flow con Room
+    implementation("androidx.room:room-ktx:$room_version")
+
+    implementation("io.coil-kt:coil-compose:2.5.0")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
